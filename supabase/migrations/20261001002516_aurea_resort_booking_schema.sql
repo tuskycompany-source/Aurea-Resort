@@ -1,0 +1,15 @@
+CREATE TABLE public.rooms(id text PRIMARY KEY,name_fr text NOT NULL,name_en text NOT NULL,price integer NOT NULL CHECK(price>=0),capacity integer NOT NULL CHECK(capacity>0),units integer NOT NULL CHECK(units>0),active integer NOT NULL DEFAULT 1 CHECK(active IN(0,1)));
+CREATE TABLE public.services(id text PRIMARY KEY,price integer NOT NULL CHECK(price>=0),active integer NOT NULL DEFAULT 1 CHECK(active IN(0,1)));
+CREATE TABLE public.bookings(id text PRIMARY KEY,user_id text NOT NULL,email text NOT NULL,guest_name text NOT NULL,room_id text NOT NULL REFERENCES public.rooms(id),unit integer NOT NULL CHECK(unit>0),check_in text NOT NULL,check_out text NOT NULL,guests integer NOT NULL,total integer NOT NULL CHECK(total>=0),status text NOT NULL DEFAULT 'confirmed' CHECK(status IN('confirmed','cancelled','blocked')),created_at text NOT NULL,request_id text NOT NULL UNIQUE,extras_json text NOT NULL DEFAULT '[]',kind text NOT NULL DEFAULT 'stay' CHECK(kind IN('stay','block')),CHECK(check_out>check_in));
+CREATE INDEX bookings_user ON public.bookings(user_id,created_at);
+CREATE INDEX bookings_room ON public.bookings(room_id);
+CREATE TABLE public.nights(room_id text NOT NULL REFERENCES public.rooms(id),unit integer NOT NULL,night text NOT NULL,booking_id text NOT NULL REFERENCES public.bookings(id),PRIMARY KEY(room_id,unit,night));
+CREATE INDEX nights_booking ON public.nights(booking_id);
+CREATE TABLE public.experience_seats(service_id text NOT NULL REFERENCES public.services(id),day text NOT NULL,time text NOT NULL,seat integer NOT NULL CHECK(seat>0),booking_id text NOT NULL REFERENCES public.bookings(id),PRIMARY KEY(service_id,day,time,seat));
+CREATE INDEX experience_booking ON public.experience_seats(booking_id);
+ALTER TABLE public.rooms ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.services ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.bookings ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.nights ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.experience_seats ENABLE ROW LEVEL SECURITY;
+REVOKE ALL ON public.rooms,public.services,public.bookings,public.nights,public.experience_seats FROM anon,authenticated;
